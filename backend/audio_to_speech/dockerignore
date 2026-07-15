@@ -1,0 +1,12 @@
+venv/
+env/
+__pycache__/
+*.pyc
+.env
+.git/
+.gitignore
+README.md
+*.md
+*.7z
+*.zip
+backend/audio_to_speech/test/
