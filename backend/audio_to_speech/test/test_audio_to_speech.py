@@ -18,6 +18,6 @@ def test_transcription(audio_file_path):
 
 if __name__ == "__main__":
     # Your specific path
-    audio_file = r"C:\Users\chess\Desktop\misc\my_projects\notetaker\backend\audio_to_speech\test\test_audio_22_sec.mp3"
+    audio_file = r"file_path\to\your\audio_file.mp3"  # Replace with the actual path to your audio file
     
     test_transcription(audio_file)
