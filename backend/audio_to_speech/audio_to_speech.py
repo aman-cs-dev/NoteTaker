@@ -54,7 +54,8 @@ async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
             tmp_path = tmp.name
 
         result = model.transcribe(tmp_path)
-        return JSONResponse({"text": result["text"]})
+        cleaned_text = await speech_cleaning(result["text"])
+        return JSONResponse(content={"transcribed_text": cleaned_text})
 
     except Exception as e:
         logger.exception("Transcription failed")
@@ -64,3 +65,44 @@ async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
         # Always clean up the temp file, even if transcription raised.
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
+
+async def speech_cleaning(text:str) -> str:
+
+    """Cleans the transcribed text by removing unwanted characters, extra spaces, and formatting issues.
+       Starts by checking if the input text is empty or None, raising a ValueError if so. 
+       Converts the text to small characters for uniformity and removal.
+       Then it removes filler words and unnecessary punctuation to create a more readable and structured version of the transcribed text for better comprehension.
+       Creates a more readable and structured version of the transcribed text for better comprehension.
+       Returns the cleaned and formatted text as a string.
+
+
+    Args:
+        text (str): The transcribed text to be cleaned.    
+
+    returns:
+        str: The cleaned and formatted text.
+
+    raises:
+        ValueError: If the input text is empty or None.                
+    """   
+      
+    if not text or not text.strip():
+            raise ValueError("Input text is empty or None")
+    
+    removal_words = [ "um ", ",", " uh ", " oh ", " like ", " you know ", " so ", " actually ", " basically ", " literally ", " I mean ", " right ", " well ", " okay ", " ok ", " hmm ", " huh ", " ah ", " er ", " eh ", " mm ", " y'know ", " you see ", " yeah ", " oops "]
+
+    small_char_text = text.lower()  # Convert to lowercase for uniformity
+
+    for word in removal_words:
+        text = small_char_text.replace(word, "")
+
+    # Remove the removal words from the text
+    text = ' '.join(text.split())  # Remove extra spaces
+
+    return text    
+
+
+   
+    
+
+    
