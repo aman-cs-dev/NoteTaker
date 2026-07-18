@@ -66,8 +66,25 @@ class finalsummaryList(BaseModel):
 @app.post("/note-taking")
 async def note_taking(request: Request):
 
+    """Endpoint for taking notes from a lecture or meeting.
+       Accepts JSON data containing meeting information and words spoken during the session.
+       Constructs a prompt for the AI to generate structured notes based on the provided information.
+       Uses the OpenAI API to generate notes in a structured format, ensuring continuity with previous notes.
+       Returns the generated notes as a JSON response.
+       
+       Args:
+           request (Request): The incoming request containing meeting information and words spoken.
+       
+       Returns:
+           JSONResponse: A JSON response containing the generated notes.
+
+       Raises:
+              Exception: If there is an error during the note-taking process, an error message is returned in the JSON response.    
+       """
+    
     data = await request.json()
     
+    # meeting info includes course name, instructor name, and course summary
     meeting_info = data["meeting_info"]
     words = data["words"]
   
@@ -103,6 +120,22 @@ async def note_taking(request: Request):
 
 @app.post("final-summary")
 async def final_summary(request: Request):
+   
+   """Endpoint for generating a final summary of a lecture or meeting.
+      Accepts JSON data containing notes and meeting information.
+      Constructs a prompt for the AI to generate a final summary based on the provided notes and meeting information.
+      Uses the OpenAI API to generate a final summary in a structured format.
+      Returns the generated final summary as a JSON response.
+      
+      Args:
+          request (Request): The incoming request containing notes and meeting information.
+      
+      Returns:
+          JSONResponse: A JSON response containing the generated final summary.
+      
+      Raises:
+          Exception: If there is an error during the final summary generation process, an error message is returned in the JSON response.
+    """
    
    data = await request.json()
 
