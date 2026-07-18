@@ -53,9 +53,11 @@ class finalsummary(BaseModel):
     course_summary: str
     final_summary: str
     important_points_to_note: Optional[str]
+    short_contextual_summary: str  # 1-2 line compressed summary, fed into the NEXT chunk's prompt
 
 class finalsummaryList(BaseModel):
     finalsummary: List[finalsummary]
+    
 
 
 
@@ -74,7 +76,8 @@ async def note_taking(request: Request):
     message = f"lecture information: {meeting_info} and lecture words by professor: {words} "
 
     prompt = (f"You are supposed to take notes of this lecture or meeting with the following information and the summary should be user friendly and "
-              f"should include all the important things and anything else which you find is important"
+              f"should include all the important things and anything else which you find is important, please make sure to include all the key points and add a short yet strong contexual summary of the lecture till now as well so the next ai agent knows the full context till now"
+              f"Continue the notes naturally, keeping continuity with what came before."
               f"here is all the information you need: \n\n"
               f"{message}\n")
     
@@ -87,7 +90,7 @@ async def note_taking(request: Request):
      response = client.beta.chat.completions.parse(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an expert in making summary, these are the 1000 words from a meeting of the user, you are supposed to make a summary out of it and make helpful notes so that user can focus on the meeting"},
+                {"role": "system", "content": "You are an expert in making summary, these are the 1000 words from a meeting of the user"},
                 {"role": "user", "content": prompt}
             ],
             response_format=notesList,
