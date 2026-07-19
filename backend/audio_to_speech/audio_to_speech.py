@@ -1,28 +1,33 @@
 import os
 import logging
 import tempfile
+from dotenv import load_dotenv
 
-
-import whisper
+from openai import OpenAI
 from fastapi import FastAPI, Request, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
+api_key = os.getenv("api_key")
 
+client = OpenAI(api_key=api_key)
 
 
 app = FastAPI(title="Audio to Speech API", description="API for transcribing audio files to text using Whisper model.", version="1.0.0")
 
-# loads the whisper small model
-model = whisper.load_model("small") 
+
+MAX_WORDS_PER_CHUNK = 1500  # Maximum words per chunk for note-taking
+
 
 
 @app.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
 
     """Transcribes an uploaded audio file to text using the Whisper model.
-       Then it saves it temporarily, transcribes it using the Whisper model, and returns the text as a JSON response.
+       Then it saves it temporarily, transcribes it using the Whisper API , and returns the text as a JSON response.
        The temporary file is deleted after transcription to free up space.
        This should happen every 5 minutes, so the frontend can send the audio file every 5 minutes and get the text version back.
 
@@ -53,8 +58,14 @@ async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
             tmp.write(content)
             tmp_path = tmp.name
 
-        result = model.transcribe(tmp_path)
-        cleaned_text = await speech_cleaning(result["text"])
+        
+        with open(tmp_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="gpt-4o-mini-transcribe",
+                file=audio_file,
+            )
+
+        cleaned_text = await speech_cleaning(transcript.text)
         return JSONResponse(content={"transcribed_text": cleaned_text})
 
     except Exception as e:
@@ -65,6 +76,25 @@ async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
         # Always clean up the temp file, even if transcription raised.
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
+
+def enforce_word_ceiling(text: str) -> str:
+
+    """Ensures that the transcribed text does not exceed the maximum word limit for note-taking.
+       If the text exceeds the limit, it truncates the text to the maximum allowed words and logs a warning.
+       This is important for maintaining manageable chunks of text for further processing or summarization.
+       
+       Args:
+           text (str): The transcribed text to be checked.
+
+       Returns:
+           str: The text with the word limit enforced.
+    """
+
+    words = text.split()
+    if len(words) > MAX_WORDS_PER_CHUNK:
+        logger.warning(f"Chunk unexpectedly long: {len(words)} words, truncating")
+        return " ".join(words[:MAX_WORDS_PER_CHUNK])
+    return text            
 
 async def speech_cleaning(text:str) -> str:
 
@@ -98,6 +128,8 @@ async def speech_cleaning(text:str) -> str:
 
     # Remove the removal words from the text
     text = ' '.join(text.split())  # Remove extra spaces
+
+    text = enforce_word_ceiling(text)  # Enforce the word limit
 
     return text    
 
