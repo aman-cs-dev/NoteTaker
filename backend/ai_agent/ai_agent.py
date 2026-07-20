@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 
-api_key = os.getenv("api_key")
+api_key = os.getenv("CHATGPT_API_KEY")
 
 client = OpenAI(api_key=api_key)
 
