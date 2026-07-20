@@ -1,0 +1,11 @@
+# Ignore FFmpeg and other large binaries
+*.7z
+*.zip
+*.tar
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore environment variables
+.env
