@@ -1,4 +1,4 @@
-# for gemini api, second AI agent, for taking notes and generating final summary
+# for gemini api
 # used for taking notes
 #uses structured output
 # filters based on userid
@@ -8,18 +8,15 @@
 
 from google import genai
 import os
+from dotenv import load_dotenv
 from typing import Annotated, List, Literal, Optional
-import openai
 from pydantic import BaseModel
 from datetime import datetime
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import JSONResponse
-
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,8 +27,14 @@ app.add_middleware(
 )
 
 
-api_key = os.getenv("api_key")
+# 1. Load your .env file
+load_dotenv()
 
+# 2. Get the key from your environment variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# 3. Pass the key to the client (or rename your .env variable to GOOGLE_API_KEY and use genai.Client())
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 #stuctured output for realtime notetaking
 # for every 1000 words
@@ -58,9 +61,6 @@ class finalsummary(BaseModel):
 class finalsummaryList(BaseModel):
     finalsummary: List[finalsummary]
     
-
-
-
 # sending ai 1000 words from the session
 # requesting to make the notes
 @app.post("/note-taking")
@@ -92,35 +92,33 @@ async def note_taking(request: Request):
 
     message = f"lecture information: {meeting_info} and lecture words by professor: {words} "
 
-    prompt = (f"You are supposed to take notes of this lecture or meeting with the following information and the summary should be user friendly and "
+    prompt = (f"You are supposed to take notes of this lecture or meeting with the following information and the summary should be user friendly "
+              f"You are an expert in making summary, these are the 1000 words from a meeting of the user."
               f"should include all the important things and anything else which you find is important, please make sure to include all the key points and add a short yet strong contexual summary of the lecture till now as well so the next ai agent knows the full context till now"
               f"Continue the notes naturally, keeping continuity with what came before."
               f"here is all the information you need: \n\n"
               f"{message}\n")
-    
- 
-    client = genai.GenerativeModel(api_key=api_key)
-
     try:
-        
-    # Try the beta parse method for 1.82.0
-     response = client.models.generate_content(
+        # 4. Use the correct method and model name
+        response = client.models.generate_content(
             model="gemini-3.1-flash-lite",
-            messages=[
-                {"role": "system", "content": "You are an expert in making summary, these are the 1000 words from a meeting of the user"},
-                {"role": "user", "content": prompt}
-            ],
-            response_format=notesList,
-        )
+            contents=prompt ,
+            config={
+        "response_mime_type": "application/json",
+        "response_schema": notesList,
+    },
+)
+        parsed: notesList = response.parsed
+        
+
+
+
+        return JSONResponse(content={"status": "success", "notes": parsed.model_dump()}, status_code=200)
     
-     parsed: notesList = response.parsed
-     return JSONResponse({"status": "success", "notes": parsed.model_dump()})
-
-
     except Exception as e:
       return JSONResponse({"status": "error", "message": str(e)})
-
-@app.post("final-summary")
+    
+@app.post("/final-summary")
 async def final_summary(request: Request):
    
    """Endpoint for generating a final summary of a lecture or meeting.
@@ -150,40 +148,25 @@ async def final_summary(request: Request):
               f"should include all the important things and anything else which you find is important"
               f"here is all the information you need: \n\n"
               f"{message}\n")
-   
-   client = genai.GenerativeModel(api_key=api_key)
 
    try:
-        
-    # Try the beta parse method for 1.82.0
-     response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            messages=[
-                {"role": "system", "content": "You are an expert in making summary, these are the notes made by the ai agent during the lecture or meeting based on the info, you are supposed to make a proper summary out of it which is super helpful for the user and the user will remember the lecture when the come back to the summary"},
-                {"role": "user", "content": prompt}
-            ],
-            response_format=finalsummaryList,
-        )
-    
-     parsed: finalsummaryList = response.parsed
-     return JSONResponse({"status": "success", "notes": parsed.model_dump()})
+       # 4. Use the correct method and model name
+       response = client.models.generate_content(
+           model="gemini-3.1-flash-lite",
+           contents=prompt ,
+           config={
+        "response_mime_type": "application/json",
+        "response_schema": finalsummaryList,
+    },
+)
+       parsed: finalsummaryList = response.parsed
+       
+       
+
+       return JSONResponse(content={"final_summary": parsed.model_dump()}, status_code=200) 
 
    except Exception as e:
       return JSONResponse({"status": "error", "message": str(e)})
-
-
-
-
-
-
-
-   
-
-
-
-
-
-
 
 
 

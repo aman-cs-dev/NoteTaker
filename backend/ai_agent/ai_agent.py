@@ -9,17 +9,17 @@
 from openai import OpenAI
 import os
 from typing import Annotated, List, Literal, Optional
-import openai
 from pydantic import BaseModel
 from datetime import datetime
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
 app = FastAPI()
 
-from fastapi.middleware.cors import CORSMiddleware
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +31,8 @@ app.add_middleware(
 
 
 api_key = os.getenv("api_key")
+
+client = OpenAI(api_key=api_key)
 
 
 #stuctured output for realtime notetaking
@@ -99,7 +101,7 @@ async def note_taking(request: Request):
               f"{message}\n")
     
  
-    client = OpenAI(api_key=api_key)
+    
 
     try:
         
