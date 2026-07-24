@@ -1,0 +1,12 @@
+# --- API framework ---
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+ 
+# --- Database (async MongoDB driver) ---
+motor==3.6.0
+ 
+# --- Chat-with-lecture (Gemini API) ---
+google-genai
+ 
+# --- Config / env ---
+python-dotenv==1.0.1
