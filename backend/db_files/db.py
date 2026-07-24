@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import os
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 app = FastAPI()
@@ -24,7 +25,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 
 # CONNECTS TO MONGODB SERVER
-client = MongoClient(MONGO_URI)
+client = AsyncIOMotorClient(MONGO_URI)
 
 
 db = client["ai_note_taker"]
@@ -78,7 +79,7 @@ async def store_every_chunk(request: Request):
 
 # gets every 5 minute summary
 @app.post("/get-chunk")
-async def get_meeting_summary(request:Request):
+async def get_meeting_chunks(request:Request):
 
     """
     Retrieves every 5 minute summary of the meeting from the database.
@@ -170,7 +171,7 @@ async def store_meeting_summary(request:Request):
         "meeting_summary": meeting_summary
     }
 
-    result = await chunk_collection.insert_one(document)
+    result = await summary_collection.insert_one(document)
     return ({"status": "yes", "message": "stored!"})
 
 @app.post("/get-summary")
