@@ -1,39 +1,26 @@
-// firebase file for initialization
-// for google and microsoft both
-
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  OAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBVEN8WgBuQZR5wMXZJ8js87wz5eRIdJBs",
-  authDomain: "notetaker-f7d4e.firebaseapp.com",
-  projectId: "notetaker-f7d4e",
-  storageBucket: "notetaker-f7d4e.firebasestorage.app",
-  messagingSenderId: "151285771625",
-  appId: "1:151285771625:web:22f6d6808496c0708821f8",
-  measurementId: "G-6V074PCFZH"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
-
 export const auth = getAuth(app);
 
-// Google
-export const googleProvider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider("microsoft.com");
 
-// Microsoft
-export const microsoftProvider = new OAuthProvider("microsoft.com");
-// Optional: scopes (you can remove if you want minimal)
-microsoftProvider.addScope("email");
-microsoftProvider.addScope("profile");
-// Optional: make Microsoft always show account chooser
-microsoftProvider.setCustomParameters({ prompt: "select_account" });
+export function signInWithGoogle() {
+  return signInWithPopup(auth, googleProvider);
+}
 
-// Optional: helper functions you can call from Landing.jsx
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
-export const signInWithMicrosoft = () => signInWithPopup(auth, microsoftProvider);
+export function signInWithMicrosoft() {
+  return signInWithPopup(auth, microsoftProvider);
+}
