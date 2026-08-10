@@ -1,118 +1,105 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthUser } from "../firebase/useAuthUser"; // adjust path to where your hook is
-
 import { motion } from "framer-motion";
-
-import Navbar from "./components/Landing_Navbar.jsx";
-import PrimaryButton from "./components/PrimaryButton";
-
+import { useAuthUser } from "../firebase/useAuthUser";
 import { signInWithGoogle, signInWithMicrosoft } from "../firebase/firebase.jsx";
 
-const ACCENT = "#FFC94D";      // highlighter amber
-const ACCENT_SOFT = "#5EEAD4"; // muted teal, used sparingly
+const ACCENT = "#FFC94D";
+const ACCENT_SOFT = "#5EEAD4";
+const BG = "#0B0E14";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   show: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: 0.05 * i, duration: 0.6, ease: [0.215, 0.61, 0.355, 1] },
+    transition: { delay: 0.08 * i, duration: 0.6, ease: [0.215, 0.61, 0.355, 1] },
   }),
 };
 
-// Signature element: a strip of 5-minute chunks filling in as a lecture
-// gets transcribed — mirrors the actual product mechanic instead of a
-// generic decorative snippet.
 function ChunkStrip() {
-  const chunks = [
-    { time: "0:00", label: "Intro & syllabus", done: true },
-    { time: "5:00", label: "Process scheduling", done: true },
-    { time: "10:00", label: "Round robin algorithm", done: true },
-    { time: "15:00", label: "...", done: false },
-    { time: "20:00", label: "...", done: false },
-    { time: "25:00", label: "...", done: false },
-  ];
-
+  const chunks = [true, true, true, true, false, false, false, false];
   return (
-    <div style={{ display: "grid", gap: 6 }}>
-      <div
-        style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 11,
-          color: "rgba(245,241,232,0.4)",
-          marginBottom: 2,
-        }}
-      >
-        LIVE — CS 3305, LECTURE 12
-      </div>
-      <div style={{ display: "flex", gap: 4 }}>
-        {chunks.map((c, i) => (
-          <motion.div
-            key={c.time}
-            initial={{ opacity: 0, scaleY: 0.4 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            transition={{ delay: 0.4 + i * 0.12, duration: 0.4 }}
-            style={{
-              flex: 1,
-              height: 34,
-              borderRadius: 6,
-              background: c.done ? ACCENT : "rgba(255,255,255,0.06)",
-              border: c.done ? "none" : "1px dashed rgba(255,255,255,0.15)",
-            }}
-          />
-        ))}
-      </div>
-      <div
-        style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 12,
-          color: "rgba(245,241,232,0.65)",
-          marginTop: 4,
-        }}
-      >
-        10:00–15:00 · <span style={{ color: ACCENT }}>transcribing…</span>
-      </div>
+    <div style={{ display: "flex", gap: 4, marginTop: 22, maxWidth: 420 }}>
+      {chunks.map((done, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scaleY: 0.3 }}
+          animate={{ opacity: 1, scaleY: 1 }}
+          transition={{ delay: 0.9 + i * 0.08, duration: 0.4 }}
+          style={{
+            flex: 1,
+            height: 30,
+            borderRadius: 6,
+            background: done ? ACCENT : "rgba(255,255,255,0.08)",
+            border: done ? "none" : "1px dashed rgba(255,255,255,0.2)",
+          }}
+        />
+      ))}
     </div>
   );
 }
 
+const FEATURES = [
+  {
+    title: "Live transcription",
+    desc: "Captures lecture or meeting audio in real time, whether it's a professor in a room or a Zoom call.",
+    icon: "🎙",
+  },
+  {
+    title: "5-minute summaries",
+    desc: "Every 5 minutes, a structured summary is generated — key points, important dates, no fluff.",
+    icon: "⏱",
+  },
+  {
+    title: "Organized by course",
+    desc: "Every lecture is filed under the right class, with the professor, date, and time attached.",
+    icon: "🗂",
+  },
+  {
+    title: "One final summary",
+    desc: "When class ends, everything is stitched into a single, coherent lecture summary you can actually study from.",
+    icon: "📝",
+  },
+  {
+    title: "Chat with your notes",
+    desc: "Ask questions about any past lecture and get answers grounded in what was actually said.",
+    icon: "💬",
+  },
+  {
+    title: "Built for real classes",
+    desc: "Handles pauses, tangents, and messy speech — not a scripted demo, an actual lecture hall.",
+    icon: "🎓",
+  },
+];
+
+const STEPS = [
+  { n: "01", title: "Start a session", desc: "Name the course and hit start before class begins." },
+  { n: "02", title: "Let it listen", desc: "NoteTaker transcribes and summarizes in the background while you focus." },
+  { n: "03", title: "Review & chat", desc: "Come back anytime to read, search, or ask questions about the lecture." },
+];
+
 export default function Landing() {
   const navigate = useNavigate();
-
   const { user, loading } = useAuthUser();
-
-  const [manual_user, setManualUser] = useState(null);
-  const [is_manual, set_is_manual] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     const saved_user = localStorage.getItem("user");
-
-    if (!loading) {
-      if (user || saved_user) {
-        if (saved_user) {
-          const parsedUser = JSON.parse(saved_user);
-          setManualUser(parsedUser);
-          set_is_manual(parsedUser.is_manual || false);
-        }
-        navigate("/dashboard", { replace: true });
-      }
+    if (!loading && (user || saved_user)) {
+      navigate("/dashboard", { replace: true });
     }
   }, [user, loading, navigate]);
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
   const handleGoogle = async () => {
     try {
       localStorage.removeItem("user");
-      const result = await signInWithGoogle();
-      console.log("Google user:", result.user);
+      await signInWithGoogle();
       navigate("/dashboard");
     } catch (err) {
-      console.error("Google login error:", err);
       alert(err?.message || "Google login failed");
     }
   };
@@ -120,207 +107,246 @@ export default function Landing() {
   const handleMicrosoft = async () => {
     try {
       localStorage.removeItem("user");
-      const result = await signInWithMicrosoft();
-      console.log("Microsoft user:", result.user);
+      await signInWithMicrosoft();
       navigate("/dashboard");
     } catch (err) {
-      console.error("Microsoft login error:", err);
       alert(err?.message || "Microsoft login failed");
     }
   };
 
-  const handleManualLogin = async () => {
-    try {
-      if (!email || !password || !firstName || !lastName) {
-        alert("Please fill all the required sections!");
-        return;
-      }
-
-      const manual_user = {
-        firstName,
-        lastName,
-        email,
-        password,
-        is_manual: true,
-      };
-
-      localStorage.setItem("user", JSON.stringify(manual_user));
-      setManualUser(manual_user);
-      set_is_manual(true);
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Error in manual login:", err);
+  const handleEmailSignup = () => {
+    if (!email || !password || !firstName) {
+      alert("Please fill everything in.");
+      return;
     }
+    localStorage.setItem("user", JSON.stringify({ firstName, email, password, is_manual: true }));
+    navigate("/dashboard");
   };
 
   return (
-    <div className="bg">
-      <div className="layer">
-        <Navbar />
+    <div style={{ minHeight: "100vh", width: "100%", background: BG, position: "relative", overflowX: "hidden", color: "#F5F1E8" }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        @keyframes float1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-20px); } }
+        @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-25px,25px); } }
+        .nt-blob1 { animation: float1 9s ease-in-out infinite; }
+        .nt-blob2 { animation: float2 11s ease-in-out infinite; }
+        .nt-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; }
+        .nt-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+        .nt-btn:active { transform: translateY(0); }
+        .nt-input { transition: border-color 0.15s ease, background 0.15s ease; }
+        .nt-input:focus { outline: none; border-color: ${ACCENT} !important; background: rgba(255,255,255,0.08) !important; }
+        .nt-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+        .nt-card:hover { transform: translateY(-4px); border-color: rgba(255,201,77,0.35) !important; }
+        .nt-section { width: 100%; }
+        .nt-inner { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+        @media (max-width: 900px) {
+          .nt-hero-grid { grid-template-columns: 1fr !important; }
+          .nt-features-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 600px) {
+          .nt-features-grid { grid-template-columns: 1fr !important; }
+          .nt-steps-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-        <main className="container hero">
-          <motion.div
-            className="card"
-            style={{ padding: "clamp(20px, 5vw, 40px)", textAlign: "left" }}
-            initial="hidden"
-            animate="show"
-            variants={fadeUp}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-              <div className="pill">Live transcription • Structured notes</div>
-              <div className="pill">Every 5 minutes, automatically</div>
-              <div className="pill">Lecture halls & Zoom calls</div>
+      <div className="nt-blob1" style={{ position: "absolute", top: "-10%", left: "-5%", width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${ACCENT}22, transparent 70%)`, filter: "blur(50px)", pointerEvents: "none" }} />
+      <div className="nt-blob2" style={{ position: "absolute", top: "20%", right: "-8%", width: 600, height: 600, borderRadius: "50%", background: `radial-gradient(circle, ${ACCENT_SOFT}18, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
+
+      {/* NAVBAR */}
+      <div className="nt-section" style={{ position: "relative", zIndex: 2 }}>
+        <div className="nt-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "grid", placeItems: "center", fontWeight: 900, color: ACCENT }}>
+              NT
             </div>
+            <span style={{ fontWeight: 800, fontSize: 15 }}>NoteTaker</span>
+          </div>
+          <button
+            className="nt-btn"
+            onClick={() => setShowEmailForm(true)}
+            style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "white", fontWeight: 700, fontSize: 13 }}
+          >
+            Sign in
+          </button>
+        </div>
+      </div>
+
+      {/* HERO */}
+      <div className="nt-section" style={{ position: "relative", zIndex: 1 }}>
+        <div className="nt-inner nt-hero-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 48, alignItems: "center", padding: "40px 32px 90px" }}>
+          <motion.div initial="hidden" animate="show">
+            <motion.div variants={fadeUp} custom={0} style={{ display: "inline-block", padding: "6px 14px", borderRadius: 999, border: `1px solid ${ACCENT}55`, background: `${ACCENT}15`, color: ACCENT, fontSize: 12, fontWeight: 700, marginBottom: 20 }}>
+              Built for lecture halls & Zoom calls
+            </motion.div>
 
             <motion.h1
-              className="h1"
               variants={fadeUp}
               custom={1}
-              style={{ fontFamily: "'Instrument Serif', serif", fontWeight: 400 }}
+              style={{ fontSize: "clamp(34px, 5vw, 54px)", lineHeight: 1.1, margin: 0, fontFamily: "Georgia, serif", fontWeight: 400 }}
             >
-              Turn your lectures into
-              <span style={{ display: "block", color: ACCENT }}>notes you'll actually reread</span>
+              Notes that write
+              <span style={{ display: "block", color: ACCENT }}>themselves in class</span>
             </motion.h1>
 
-            <motion.p className="sub" variants={fadeUp} custom={2} style={{ maxWidth: "800px", marginBottom: 32 }}>
-              NoteTaker listens while you sit back and pay attention. Every five minutes it
-              transcribes, summarizes, and files your notes by course — so you never scramble
-              to catch up after class.
+            <motion.p
+              variants={fadeUp}
+              custom={2}
+              style={{ marginTop: 18, color: "rgba(245,241,232,0.65)", fontSize: 17, lineHeight: 1.65, maxWidth: 480 }}
+            >
+              NoteTaker listens during your lecture, transcribes and summarizes it every
+              five minutes, and hands you clean, organized notes the moment class ends.
+              No more scrambling to catch up.
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={3} className="heroGrid" style={{ alignItems: "start" }}>
-              <div style={{ display: "grid", gap: 16 }}>
-                <div className="featureCard" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <div style={{ fontWeight: 900, marginBottom: 12, fontSize: 16 }}>What this tool does</div>
-                  <div style={{ color: "rgba(255,255,255,0.70)", lineHeight: 1.6, fontSize: 14 }}>
-                    <p>• Captures lecture or meeting audio, live.</p>
-                    <p>• Transcribes and summarizes every 5 minutes.</p>
-                    <p>• Organizes notes by course, saved to your account.</p>
-                    <div
-                      style={{
-                        marginTop: 12,
-                        fontSize: 13,
-                        opacity: 0.8,
-                        borderTop: "1px solid rgba(255,255,255,0.1)",
-                        paddingTop: 12,
-                      }}
-                    >
-                      Goal: show up to class, leave with your notes already done.
-                    </div>
-                  </div>
-                </div>
+            <motion.div variants={fadeUp} custom={3} style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
+              <button
+                className="nt-btn"
+                onClick={() => setShowEmailForm(true)}
+                style={{ padding: "14px 26px", borderRadius: 12, border: "none", background: ACCENT, color: "#0B0E14", fontWeight: 800, fontSize: 15 }}
+              >
+                Get started free
+              </button>
+              <button
+                className="nt-btn"
+                onClick={handleGoogle}
+                style={{ padding: "14px 26px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 15 }}
+              >
+                Continue with Google
+              </button>
+            </motion.div>
 
-                <div className="featureCard" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <div style={{ fontWeight: 900 }}>Quick start</div>
-                    <div className="pill">Steps</div>
-                  </div>
-                  <div style={{ display: "grid", gap: 8, fontSize: 14, color: "rgba(255,255,255,0.8)", marginBottom: 16 }}>
-                    <div><strong>1.</strong> Start a session, name the course</div>
-                    <div><strong>2.</strong> Let it listen while you focus</div>
-                    <div><strong>3.</strong> Review, search, and chat with your notes</div>
-                  </div>
-
-                  <ChunkStrip />
-                </div>
-              </div>
-
-              <div className="card authBox" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>Start taking better notes</div>
-                  <div style={{ marginTop: 4, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                    Connect a course and never miss a point.
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gap: 12 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <input
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="First name"
-                      className="pill"
-                      style={{ width: "100%", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}
-                    />
-                    <input
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Last name"
-                      className="pill"
-                      style={{ width: "100%", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}
-                    />
-                  </div>
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    type="email"
-                    className="pill"
-                    style={{ width: "100%", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}
-                  />
-                  <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    type="password"
-                    className="pill"
-                    style={{ width: "100%", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}
-                  />
-
-                  <PrimaryButton style={{ marginTop: 8, background: ACCENT }} onClick={handleManualLogin}>
-                    Create account
-                  </PrimaryButton>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0", color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
-                    <div style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.1)" }} />
-                    OR
-                    <div style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.1)" }} />
-                  </div>
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <button className="authOption" style={{ width: "100%", cursor: "pointer" }} onClick={handleGoogle}>
-                      <div className="authLeft">
-                        <div className="iconBadge">G</div>
-                        <div className="authTitle" style={{ fontSize: 14 }}>Google</div>
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.6 }}>Continue</div>
-                    </button>
-                    <button className="authOption" style={{ width: "100%", cursor: "pointer" }} onClick={handleMicrosoft}>
-                      <div className="authLeft">
-                        <div className="iconBadge">M</div>
-                        <div className="authTitle" style={{ fontSize: 14 }}>Microsoft</div>
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.6 }}>Continue</div>
-                    </button>
-                  </div>
-                </div>
+            <motion.div variants={fadeUp} custom={4}>
+              <ChunkStrip />
+              <div style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "rgba(245,241,232,0.4)", marginTop: 8 }}>
+                20:00–25:00 · <span style={{ color: ACCENT }}>transcribing…</span>
               </div>
             </motion.div>
           </motion.div>
 
-          <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
-            <motion.div className="card" style={{ padding: 20 }} variants={fadeUp} custom={4} initial="hidden" animate="show">
-              <div style={{ fontWeight: 900, marginBottom: 8 }}>Why chunked summaries</div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, lineHeight: 1.6 }}>
-                Breaking a lecture into 5-minute pieces keeps each summary focused and lets
-                you review the exact moment something was said, not just a vague gist.
-              </div>
-            </motion.div>
+          {/* SIGNUP CARD */}
+          <motion.div
+            id="signup"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            style={{ padding: 28, borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 4 }}>Get started</div>
+            <div style={{ color: "rgba(245,241,232,0.5)", fontSize: 13, marginBottom: 22 }}>
+              Free to try — no credit card needed.
+            </div>
 
-            <motion.div className="card" style={{ padding: 20 }} variants={fadeUp} custom={5} initial="hidden" animate="show">
-              <div style={{ fontWeight: 900, marginBottom: 8 }}>Coming soon</div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.6 }}>
-                • Chat with any past lecture<br />
-                • Search notes across all your courses<br />
-                • Shared notes for study groups
-              </div>
-            </motion.div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <button
+                className="nt-btn"
+                onClick={handleGoogle}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", padding: "13px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 14 }}
+              >
+                <span style={{ fontWeight: 900 }}>G</span> Continue with Google
+              </button>
+              <button
+                className="nt-btn"
+                onClick={handleMicrosoft}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", padding: "13px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 14 }}
+              >
+                <span style={{ fontWeight: 900 }}>M</span> Continue with Microsoft
+              </button>
+              <button
+                className="nt-btn"
+                onClick={() => setShowEmailForm((v) => !v)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", padding: "13px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 14 }}
+              >
+                ✉ Continue with email
+              </button>
+
+              {showEmailForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  style={{ display: "grid", gap: 10, marginTop: 4, overflow: "hidden" }}
+                >
+                  <input className="nt-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
+                    style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white" }} />
+                  <input className="nt-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" type="email"
+                    style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white" }} />
+                  <input className="nt-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" type="password"
+                    style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "white" }} />
+                  <button className="nt-btn" onClick={handleEmailSignup}
+                    style={{ padding: 13, borderRadius: 10, border: "none", background: ACCENT, color: "#0B0E14", fontWeight: 800, fontSize: 14 }}>
+                    Create account
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* FEATURES */}
+      <div className="nt-section" style={{ position: "relative", zIndex: 1, background: "rgba(255,255,255,0.015)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="nt-inner" style={{ padding: "80px 32px" }}>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ textAlign: "center", marginBottom: 48 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT_SOFT, letterSpacing: 1, marginBottom: 8 }}>WHAT IT DOES</div>
+            <h2 style={{ fontSize: "clamp(26px, 3.5vw, 36px)", fontFamily: "Georgia, serif", fontWeight: 400, margin: 0 }}>
+              Everything happens while you're just paying attention
+            </h2>
+          </motion.div>
+
+          <div className="nt-features-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
+            {FEATURES.map((f, i) => (
+              <motion.div
+                key={f.title}
+                className="nt-card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                style={{ padding: 24, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <div style={{ fontSize: 26, marginBottom: 14 }}>{f.icon}</div>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{f.title}</div>
+                <div style={{ color: "rgba(245,241,232,0.6)", fontSize: 14, lineHeight: 1.6 }}>{f.desc}</div>
+              </motion.div>
+            ))}
           </div>
+        </div>
+      </div>
 
-          <footer className="footer" style={{ textAlign: "center", marginTop: 40 }}>
-            Built for lecture halls, seminar rooms, and Zoom calls • 2026
-          </footer>
-        </main>
+      {/* HOW IT WORKS */}
+      <div className="nt-section" style={{ position: "relative", zIndex: 1 }}>
+        <div className="nt-inner" style={{ padding: "80px 32px" }}>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ textAlign: "center", marginBottom: 48 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT_SOFT, letterSpacing: 1, marginBottom: 8 }}>HOW IT WORKS</div>
+            <h2 style={{ fontSize: "clamp(26px, 3.5vw, 36px)", fontFamily: "Georgia, serif", fontWeight: 400, margin: 0 }}>
+              Three steps, zero effort during class
+            </h2>
+          </motion.div>
+
+          <div className="nt-steps-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24 }}>
+            {STEPS.map((s, i) => (
+              <motion.div
+                key={s.n}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <div style={{ fontFamily: "'Courier New', monospace", fontSize: 13, color: ACCENT, fontWeight: 700, marginBottom: 10 }}>{s.n}</div>
+                <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 8 }}>{s.title}</div>
+                <div style={{ color: "rgba(245,241,232,0.6)", fontSize: 14, lineHeight: 1.6 }}>{s.desc}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <div className="nt-section" style={{ position: "relative", zIndex: 1, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="nt-inner" style={{ padding: "32px", textAlign: "center", color: "rgba(245,241,232,0.4)", fontSize: 13 }}>
+          Built for lecture halls, seminar rooms, and Zoom calls • 2026
+        </div>
       </div>
     </div>
   );

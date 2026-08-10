@@ -10,12 +10,13 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB9r1B_A_9tGlOk_aG47vK7vf7romF1p1g",
-  authDomain: "open-source-collaborator.firebaseapp.com",
-  projectId: "open-source-collaborator",
-  storageBucket: "open-source-collaborator.firebasestorage.app",
-  messagingSenderId: "177061193732",
-  appId: "1:177061193732:web:d7aabd295c55f40281ed51",
+  apiKey: "AIzaSyBVEN8WgBuQZR5wMXZJ8js87wz5eRIdJBs",
+  authDomain: "notetaker-f7d4e.firebaseapp.com",
+  projectId: "notetaker-f7d4e",
+  storageBucket: "notetaker-f7d4e.firebasestorage.app",
+  messagingSenderId: "151285771625",
+  appId: "1:151285771625:web:22f6d6808496c0708821f8",
+  measurementId: "G-6V074PCFZH"
 };
 
 const app = initializeApp(firebaseConfig);
