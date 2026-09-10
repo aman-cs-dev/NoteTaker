@@ -245,7 +245,7 @@ export default function ClassSetup() {
     }
 
     localStorage.setItem("notetaker_classes", JSON.stringify(filled));
-    navigate("/dashboard");
+    navigate("/MainPage");
   };
 
   return (
