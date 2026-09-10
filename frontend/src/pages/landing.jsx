@@ -90,7 +90,7 @@ export default function Landing() {
   useEffect(() => {
     const saved_user = localStorage.getItem("user");
     if (!loading && (user || saved_user)) {
-      navigate("/dashboard", { replace: true });
+      navigate("/UserInfo", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -98,7 +98,7 @@ export default function Landing() {
     try {
       localStorage.removeItem("user");
       await signInWithGoogle();
-      navigate("/dashboard");
+      navigate("/UserInfo");
     } catch (err) {
       alert(err?.message || "Google login failed");
     }
@@ -108,7 +108,7 @@ export default function Landing() {
     try {
       localStorage.removeItem("user");
       await signInWithMicrosoft();
-      navigate("/dashboard");
+      navigate("/UserInfo");
     } catch (err) {
       alert(err?.message || "Microsoft login failed");
     }
@@ -120,7 +120,7 @@ export default function Landing() {
       return;
     }
     localStorage.setItem("user", JSON.stringify({ firstName, email, password, is_manual: true }));
-    navigate("/dashboard");
+    navigate("/UserInfo");
   };
 
   return (
